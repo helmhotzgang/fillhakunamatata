@@ -29,10 +29,6 @@ def run_browser_instance(thread_id):
     options.add_argument("--headless")  # Run Chrome in headless mode for faster performance
     driver = webdriver.Chrome(service=service, options=options)
 
-    # Set implicit wait for all elements to 2 seconds for faster search
-    driver.implicitly_wait(3)
-
-    is_first_visit = True  # Flag to check if it's the first time loading the page
 
     try:
         while True:
@@ -41,34 +37,29 @@ def run_browser_instance(thread_id):
 
             # Open the website
             driver.get(url)
-            #print("Website loaded.")
 
             # Wait for the "Ich habe keinen Account/keinen Zugriff" button to be clickable
-            WebDriverWait(driver, 3).until(
+            WebDriverWait(driver, 5).until(
                 EC.element_to_be_clickable((By.XPATH, "//p[text()='Ich habe keinen Account/keinen Zugriff']"))
             )
 
 
             # Click the "Ich habe keinen Account/keinen Zugriff" button
             driver.find_element(By.XPATH, "//p[text()='Ich habe keinen Account/keinen Zugriff']").click()
-            #print("Clicked on the 'Ich habe keinen Account/keinen Zugriff' button.")
 
             # Wait for the form to load and fill it
             WebDriverWait(driver, 3).until(
                 EC.presence_of_element_located((By.CLASS_NAME, 'v-form'))
             )
-            #print("Form loaded successfully.")
 
             # Enter the name field
             name_input = driver.find_element(By.ID, "input-15")
             name_input.send_keys(generate_random_string(8))
-            #print("Entered random name.")
             name_input.send_keys(Keys.TAB)
 
             # Enter the email field
             email_input = driver.find_element(By.ID, "input-18")
             email_input.send_keys(generate_random_email())
-            #print("Entered random email.")
             email_input.send_keys(Keys.TAB)
 
             class_input = driver.find_element(By.XPATH, "//div[@role='button' and @aria-expanded='false']")
@@ -80,53 +71,59 @@ def run_browser_instance(thread_id):
                     (By.XPATH, "(//div[@role='listbox']//div[@class='v-list-item__content'])[1]"))
             )
             first_class_option.click()
-            #print("Selected a class.")
 
             # Click the "Weiter" button
             driver.execute_script("window.scrollTo(0, 800);")  # Scroll down to make sure the button is in view
             WebDriverWait(driver, 3).until(
                 EC.element_to_be_clickable((By.XPATH, "//button/span[text()='Weiter']"))
             ).click()
-            #print("Weiter button clicked.")
 
             # Click the "Anmelden" button directly
             WebDriverWait(driver, 3).until(
                 EC.element_to_be_clickable((By.XPATH, "//button/span[text()='Anmelden']"))
             ).click()
-            #print("Anmelden button clicked.")
 
             # Timer ends
             end_time = time.time()
             duration = end_time - start_time
             print(f"Thread {thread_id}: Login process completed in {duration:.2f} seconds.")
 
-            #print("Reloading the page...\n")
-
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"Thread {thread_id}: An error occurred: {e}")
+        # The thread will exit here, and the main loop will restart it
 
     finally:
-        # Close the driver when done
         driver.quit()
-        #print("Browser instance closed.")
+        print(f"Thread {thread_id}: Browser instance closed.")
 
 
 if __name__ == "__main__":
-    # Create and start 10 browser processes, passing the thread_id to each process
-    processes = []
-    for thread_id in range(1, 11):  # Thread ids from 1 to 10
+    def start_thread(thread_id):
+        """Function to start a thread with a given thread_id."""
         process = Process(target=run_browser_instance, args=(thread_id,))
         process.start()
-        processes.append(process)
+        return process
+
+
+    # Create and start 10 browser processes, monitoring for crashes
+    processes = {}
+    for thread_id in range(1, 11):
+        processes[thread_id] = start_thread(thread_id)
 
     try:
-        # Keep the main script alive while the subprocesses run
-        for process in processes:
-            process.join()
+        while True:
+            # Monitor processes and restart any that have crashed
+            for thread_id, process in processes.items():
+                if not process.is_alive():  # Check if the process is no longer running
+                    print(f"Thread {thread_id} crashed. Restarting...")
+                    processes[thread_id] = start_thread(thread_id)
+
+            time.sleep(5)  # Check every 1 second
+
     except KeyboardInterrupt:
         print("Script stopped by user.")
     finally:
-        for process in processes:
+        for process in processes.values():
             process.terminate()
             process.join()
         print("All browser instances closed.")
