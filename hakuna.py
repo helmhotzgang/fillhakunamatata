@@ -7,9 +7,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import WebDriverException, TimeoutException
 from webdriver_manager.chrome import ChromeDriverManager
 from multiprocessing import Process
-
 
 # Function to generate random data
 def generate_random_string(length):
@@ -29,68 +29,82 @@ def run_browser_instance(thread_id):
     options.add_argument("--headless")  # Run Chrome in headless mode for faster performance
     driver = webdriver.Chrome(service=service, options=options)
 
+    retry_limit = 3  # Number of retry attempts for each error
 
     try:
         while True:
-            # Timer starts
-            start_time = time.time()
+            retry_count = 0  # Reset retry counter for each iteration
+            while retry_count < retry_limit:
+                try:
+                    # Timer starts
+                    start_time = time.time()
 
-            # Open the website
-            driver.get(url)
+                    # Open the website
+                    driver.get(url)
 
-            # Wait for the "Ich habe keinen Account/keinen Zugriff" button to be clickable
-            WebDriverWait(driver, 5).until(
-                EC.element_to_be_clickable((By.XPATH, "//p[text()='Ich habe keinen Account/keinen Zugriff']"))
-            )
+                    # Wait for the "Ich habe keinen Account/keinen Zugriff" button to be clickable
+                    WebDriverWait(driver, 5).until(
+                        EC.element_to_be_clickable((By.XPATH, "//p[text()='Ich habe keinen Account/keinen Zugriff']"))
+                    )
 
+                    # Click the button
+                    driver.find_element(By.XPATH, "//p[text()='Ich habe keinen Account/keinen Zugriff']").click()
 
-            # Click the "Ich habe keinen Account/keinen Zugriff" button
-            driver.find_element(By.XPATH, "//p[text()='Ich habe keinen Account/keinen Zugriff']").click()
+                    # Wait for the form to load and fill it
+                    WebDriverWait(driver, 3).until(
+                        EC.presence_of_element_located((By.CLASS_NAME, 'v-form'))
+                    )
 
-            # Wait for the form to load and fill it
-            WebDriverWait(driver, 3).until(
-                EC.presence_of_element_located((By.CLASS_NAME, 'v-form'))
-            )
+                    # Enter the name field
+                    name_input = driver.find_element(By.ID, "input-15")
+                    name_input.send_keys(generate_random_string(8))
+                    name_input.send_keys(Keys.TAB)
 
-            # Enter the name field
-            name_input = driver.find_element(By.ID, "input-15")
-            name_input.send_keys(generate_random_string(8))
-            name_input.send_keys(Keys.TAB)
+                    # Enter the email field
+                    email_input = driver.find_element(By.ID, "input-18")
+                    email_input.send_keys(generate_random_email())
+                    email_input.send_keys(Keys.TAB)
 
-            # Enter the email field
-            email_input = driver.find_element(By.ID, "input-18")
-            email_input.send_keys(generate_random_email())
-            email_input.send_keys(Keys.TAB)
+                    # Select the class
+                    class_input = driver.find_element(By.XPATH, "//div[@role='button' and @aria-expanded='false']")
+                    class_input.click()
 
-            class_input = driver.find_element(By.XPATH, "//div[@role='button' and @aria-expanded='false']")
-            class_input.click()
+                    # Click the first class option
+                    first_class_option = WebDriverWait(driver, 1).until(
+                        EC.presence_of_element_located(
+                            (By.XPATH, "(//div[@role='listbox']//div[@class='v-list-item__content'])[1]")
+                        )
+                    )
+                    first_class_option.click()
 
-            # Directly locate and click the first class option without waiting unnecessarily
-            first_class_option = WebDriverWait(driver, 1).until(
-                EC.presence_of_element_located(
-                    (By.XPATH, "(//div[@role='listbox']//div[@class='v-list-item__content'])[1]"))
-            )
-            first_class_option.click()
+                    # Click the "Weiter" button
+                    driver.execute_script("window.scrollTo(0, 800);")  # Scroll down to ensure the button is in view
+                    WebDriverWait(driver, 3).until(
+                        EC.element_to_be_clickable((By.XPATH, "//button/span[text()='Weiter']"))
+                    ).click()
 
-            # Click the "Weiter" button
-            driver.execute_script("window.scrollTo(0, 800);")  # Scroll down to make sure the button is in view
-            WebDriverWait(driver, 3).until(
-                EC.element_to_be_clickable((By.XPATH, "//button/span[text()='Weiter']"))
-            ).click()
+                    # Click the "Anmelden" button directly
+                    WebDriverWait(driver, 3).until(
+                        EC.element_to_be_clickable((By.XPATH, "//button/span[text()='Anmelden']"))
+                    ).click()
 
-            # Click the "Anmelden" button directly
-            WebDriverWait(driver, 3).until(
-                EC.element_to_be_clickable((By.XPATH, "//button/span[text()='Anmelden']"))
-            ).click()
+                    # Timer ends
+                    end_time = time.time()
+                    duration = end_time - start_time
+                    print(f"Thread {thread_id}: Login process completed in {duration:.2f} seconds.")
+                    break  # Exit retry loop if successful
 
-            # Timer ends
-            end_time = time.time()
-            duration = end_time - start_time
-            print(f"Thread {thread_id}: Login process completed in {duration:.2f} seconds.")
+                except (TimeoutException, WebDriverException) as e:
+                    retry_count += 1
+                    print(f"Thread {thread_id}: Error occurred - Retrying {retry_count}/{retry_limit}...")
+
+                    if retry_count == retry_limit:
+                        print(f"Thread {thread_id}: Max retries reached. Skipping this iteration.")
+                        break  # Skip this iteration after max retries
+
 
     except Exception as e:
-        print(f"Thread {thread_id}: An error occurred: {e}")
-        # The thread will exit here, and the main loop will restart it
+        print(f"Thread {thread_id}: A critical error occurred.")
 
     finally:
         driver.quit()
@@ -103,7 +117,6 @@ if __name__ == "__main__":
         process = Process(target=run_browser_instance, args=(thread_id,))
         process.start()
         return process
-
 
     # Create and start 10 browser processes, monitoring for crashes
     processes = {}
@@ -118,7 +131,7 @@ if __name__ == "__main__":
                     print(f"Thread {thread_id} crashed. Restarting...")
                     processes[thread_id] = start_thread(thread_id)
 
-            time.sleep(5)  # Check every 1 second
+            time.sleep(1)  # Check every second
 
     except KeyboardInterrupt:
         print("Script stopped by user.")
