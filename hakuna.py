@@ -11,17 +11,31 @@ from selenium.common.exceptions import WebDriverException, TimeoutException
 from webdriver_manager.chrome import ChromeDriverManager
 from multiprocessing import Process
 
+total_logins = 0
+
 # Function to generate random data
 def generate_random_string(length):
     return ''.join(random.choices(string.ascii_letters, k=length))
 
 
 def generate_random_email():
-    return generate_random_string(10) + "@example.com"
+    return generate_random_string(10) + "@" + generate_random_string(5) + ".com"
+
+def get_thread_count():
+    """Prompt the user to input a number between 1 and 1000."""
+    while True:
+        try:
+            thread_count = int(input("Enter the number of threads (between 1 and 1000): "))
+            if 1 <= thread_count <= 1000:
+                return thread_count
+            else:
+                print("Please enter a number between 1 and 1000.")
+        except ValueError:
+            print("Invalid input. Please enter an integer.")
 
 
 def run_browser_instance(thread_id):
-    url = "file:///C:/My%20Web%20Sites/hm%20site/index.html"  # Website URL
+    url = "https://hm.helmholtzschule.de/"  # Website URL
 
     # Start the WebDriver using webdriver-manager
     service = Service(ChromeDriverManager().install())
@@ -92,6 +106,7 @@ def run_browser_instance(thread_id):
                     end_time = time.time()
                     duration = end_time - start_time
                     print(f"Thread {thread_id}: Login process completed in {duration:.2f} seconds.")
+                    total_logins += 1
                     break  # Exit retry loop if successful
 
                 except (TimeoutException, WebDriverException) as e:
@@ -114,13 +129,14 @@ def run_browser_instance(thread_id):
 if __name__ == "__main__":
     def start_thread(thread_id):
         """Function to start a thread with a given thread_id."""
+        print(f"Thread {thread_id}: Starting...")  # Print when the thread starts
         process = Process(target=run_browser_instance, args=(thread_id,))
         process.start()
         return process
-
+    num_threads = get_thread_count()
     # Create and start 10 browser processes, monitoring for crashes
     processes = {}
-    for thread_id in range(1, 11):
+    for thread_id in range(1, num_threads + 1):  # Use user-defined number of threads
         processes[thread_id] = start_thread(thread_id)
 
     try:
@@ -140,3 +156,4 @@ if __name__ == "__main__":
             process.terminate()
             process.join()
         print("All browser instances closed.")
+        print(f"Total Logins completed: {total_logins}")
