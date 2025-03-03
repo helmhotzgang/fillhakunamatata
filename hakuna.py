@@ -1,4 +1,5 @@
 import time
+import os
 import random
 import string
 from selenium import webdriver
@@ -32,17 +33,40 @@ def get_thread_count():
         except ValueError:
             print("Invalid input. Please enter an integer.")
 
+def read_proxies_from_file(filename="proxies.txt"):
+    """Reads proxy list from the file if it exists and is not empty."""
+    if os.path.exists(filename) and os.path.getsize(filename) > 0:
+        with open(filename, 'r') as file:
+            proxies = [line.strip() for line in file.readlines() if line.strip()]
+        if proxies:
+            print(f"Loaded {len(proxies)} proxies from file.")
+            return proxies
+    print("No proxies found or the file is empty. Proceeding without proxies.")
+    return None
 
-def run_browser_instance(thread_id):
+def run_browser_instance(thread_id, proxies=None):
+    proxy_index = 0  # Start with the first proxy
+    proxy = None
+
+# If proxies are provided, set one for each login attempt
+    if proxies:
+        proxy = proxies[proxy_index]  # Use the first proxy initially
+
+
     url = "https://hm.helmholtzschule.de/"  # Website URL
 
     # Start the WebDriver using webdriver-manager
     service = Service(ChromeDriverManager().install())
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")  # Run Chrome in headless mode for faster performance
+    if proxy:
+        options.add_argument(f"--proxy-server={proxy}")  # Set the initial proxy
     driver = webdriver.Chrome(service=service, options=options)
 
     retry_limit = 3  # Number of retry attempts for each error
+    max_proxy_switches = len(proxies) if proxies else 0  # Max number of proxy switches (i.e., number of proxies available)
+    failures_since_last_proxy = 0  # Counter to track how many consecutive failures occurred
+
 
     try:
         while True:
@@ -116,8 +140,21 @@ def run_browser_instance(thread_id):
                     print(f"Thread {thread_id}: Error occurred - Retrying {retry_count}/{retry_limit}...")
 
                     if retry_count == retry_limit:
-                        print(f"Thread {thread_id}: Max retries reached. Skipping this iteration.")
-                        break  # Skip this iteration after max retries
+                        failures_since_last_proxy += 1
+                        print(f"Thread {thread_id}: Max retries reached for current proxy.")
+
+                        # Switch proxy after max retries if there are more proxies
+                        if failures_since_last_proxy >= retry_limit and proxy_index < len(proxies) - 1:
+                            proxy_index += 1
+                            proxy = proxies[proxy_index]  # Switch to next proxy
+                            failures_since_last_proxy = 0  # Reset failure counter
+                            print(f"Thread {thread_id}: Switching to proxy {proxy}.")
+                            driver.quit()  # Quit the previous driver
+                            options.add_argument(f"--proxy-server={proxy}")  # Set the new proxy
+                            driver = webdriver.Chrome(service=service, options=options)  # Restart with new proxy
+                        else:
+                            print(f"Thread {thread_id}: No more proxies available. Skipping iteration.")
+                            break  # Skip this iteration after max retries and proxy changes
 
 
     except Exception as e:
@@ -129,18 +166,21 @@ def run_browser_instance(thread_id):
 
 
 if __name__ == "__main__":
-    def start_thread(thread_id):
+    def start_thread(thread_id, proxies):
         """Function to start a thread with a given thread_id."""
         print(f"Thread {thread_id}: Starting...")  # Print when the thread starts
-        process = Process(target=run_browser_instance, args=(thread_id,))
+        process = Process(target=run_browser_instance, args=(thread_id, proxies))
+
         process.start()
         return process
     total_logins = Value('i', 0)
+    proxies = read_proxies_from_file()  # Load proxies from file
+
     num_threads = get_thread_count()
     # Create and start 10 browser processes, monitoring for crashes
     processes = {}
     for thread_id in range(1, num_threads + 1):  # Use user-defined number of threads
-        processes[thread_id] = start_thread(thread_id)
+        processes[thread_id] = start_thread(thread_id, proxies)
 
     try:
         while True:
@@ -148,7 +188,7 @@ if __name__ == "__main__":
             for thread_id, process in processes.items():
                 if not process.is_alive():  # Check if the process is no longer running
                     print(f"Thread {thread_id} crashed. Restarting...")
-                    processes[thread_id] = start_thread(thread_id)
+                    processes[thread_id] = start_thread(thread_id, proxies)
 
             time.sleep(1)  # Check every second
 
