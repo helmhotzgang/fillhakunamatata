@@ -9,9 +9,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import WebDriverException, TimeoutException
 from webdriver_manager.chrome import ChromeDriverManager
-from multiprocessing import Process
+from multiprocessing import Process, Value
 
-total_logins = 0
 
 # Function to generate random data
 def generate_random_string(length):
@@ -106,7 +105,10 @@ def run_browser_instance(thread_id):
                     end_time = time.time()
                     duration = end_time - start_time
                     print(f"Thread {thread_id}: Login process completed in {duration:.2f} seconds.")
-                    total_logins += 1
+
+                    with total_logins.get_lock():
+                        total_logins.value += 1
+
                     break  # Exit retry loop if successful
 
                 except (TimeoutException, WebDriverException) as e:
@@ -133,6 +135,7 @@ if __name__ == "__main__":
         process = Process(target=run_browser_instance, args=(thread_id,))
         process.start()
         return process
+    total_logins = Value('i', 0)
     num_threads = get_thread_count()
     # Create and start 10 browser processes, monitoring for crashes
     processes = {}
@@ -156,4 +159,4 @@ if __name__ == "__main__":
             process.terminate()
             process.join()
         print("All browser instances closed.")
-        print(f"Total Logins completed: {total_logins}")
+        print(f"Total Logins completed: {total_logins.value}")

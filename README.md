@@ -3,5 +3,5 @@ This is purely for educational purposes and should not be used on the real websi
 If you need the website locally you can use a programm like WinHTTrack. (or use the zip file provided)
 
 TO-DO:
--Change to packet based logins
--Add proxy support (maybe even rotating once one gets blocked)
+    -Change to packet based logins
+    -Add proxy support (maybe even rotating once one gets blocked)
