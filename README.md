@@ -5,4 +5,4 @@ If you need the website locally you can use a programm like WinHTTrack. (or use 
 TO-DO:
 -    Change to packet based logins. 
     someone go make this and open a pull request idk if its really worth it, or if it'll be consistent
--    Add proxy support (maybe even rotating once one gets blocked)
+-    Add proxy support (maybe even rotating once one gets blocked)(just looked through the process of adding paid proxies, and that might take a while as its a pain in the ass to auth)
