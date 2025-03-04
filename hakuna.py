@@ -60,7 +60,7 @@ def run_browser_instance(thread_id, proxies=None):
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")  # Run Chrome in headless mode for faster performance
     if proxy:
-        options.add_argument(f"--proxy-server={proxy}")  # Set the initial proxy
+        options.add_argument(f"--proxy-server={proxy}".format('http://ip:port'))  # Set the initial proxy
     driver = webdriver.Chrome(service=service, options=options)
 
     retry_limit = 3  # Number of retry attempts for each error
