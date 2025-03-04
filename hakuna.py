@@ -12,14 +12,32 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import WebDriverException, TimeoutException
 from webdriver_manager.chrome import ChromeDriverManager
 from queue import Queue
+
 #global vars
 proxy_queue = Queue()
 login_lock = threading.Lock()
+total_logins = [0]
 
 
 # Function to generate random data
 def generate_random_string(length):
     return ''.join(random.choices(string.ascii_letters, k=length))
+
+def load_total_logins_from_file():
+    """Load the current total logins count from the file."""
+    try:
+        with open("total_logins.txt", "r") as file:
+            return int(file.read().strip())  # Read and return the number as an integer
+    except FileNotFoundError:
+        return 0  # If the file doesn't exist, return 0 (no logins yet)
+    except ValueError:
+        return 0  # If the file is empty or corrupted, return 0
+    
+def save_total_logins_to_file():
+    """Save the total logins count to a text file."""
+    with open("total_logins.txt", "w") as file:
+        file.write(str(total_logins[0]))  # Save the total logins as a string in the file
+    print(f"Total logins saved to total_logins.txt: {total_logins[0]}")
 
 def read_names_from_file(filename):
     """Reads names from a file, one per line, and returns a list."""
@@ -211,7 +229,7 @@ if __name__ == "__main__":
         thread.start()
         return thread
     
-    total_logins = [0]
+    total_logins[0] = load_total_logins_from_file()
     read_proxies_from_file()  # Load proxies from file
     num_threads = get_thread_count()
 
@@ -228,4 +246,5 @@ if __name__ == "__main__":
         print("Script stopped by user.")
     finally:
         print("All browser instances closed.")
-        print(f"Total Logins completed: {total_logins.value}")
+        save_total_logins_to_file()
+        print(f"Total Logins completed: {total_logins[0]}")
