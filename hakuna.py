@@ -11,19 +11,52 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import WebDriverException, TimeoutException
 from webdriver_manager.chrome import ChromeDriverManager
-from multiprocessing import Process, Value
 from queue import Queue
 #global vars
 proxy_queue = Queue()
+login_lock = threading.Lock()
 
 
 # Function to generate random data
 def generate_random_string(length):
     return ''.join(random.choices(string.ascii_letters, k=length))
 
+def read_names_from_file(filename):
+    """Reads names from a file, one per line, and returns a list."""
+    if os.path.exists(filename) and os.path.getsize(filename) > 0:
+        with open(filename, 'r', encoding='utf-8', errors='replace') as file:
+            names = [line.strip() for line in file.readlines() if line.strip()]
+        if names:
+            return names
+    print(f"Warning: {filename} is empty or missing.")
+    return None
 
-def generate_random_email():
-    return generate_random_string(10) + "@" + generate_random_string(5) + ".com"
+# Load first and last names from text files
+
+first_names = read_names_from_file("first_names.txt")
+
+last_names = read_names_from_file("last_names.txt")
+
+def generate_full_name():
+    """Generates a random full name (first name + last name)."""
+    if not first_names or not last_names:
+        print("Error: Name files are empty.")
+        return None, None
+
+    first_name = random.choice(first_names).strip()
+    last_name = random.choice(last_names).strip()
+    return first_name, last_name
+
+def generate_random_email(first_name, last_name):
+    """Generates an email using the full last name and the first letter of the first name."""
+    if not first_name or not last_name:
+        print("Error: Name files are empty. Falling back to random string.")
+        return generate_random_string(10) + "@helmholtzschule.de"
+
+    first_name = first_name.lower()  # Make the first name lowercase
+    last_name = last_name.lower()  # Make the last name lowercase
+    return f"{last_name}{first_name[0].lower()}@helmholtzschule.de"  # LastName + FirstInitial
+
 
 def get_thread_count():
     """Prompt the user to input a number between 1 and 1000."""
@@ -48,7 +81,6 @@ def read_proxies_from_file(filename="proxies.txt"):
         print(f"Loaded proxies into queue.")
     else:
         print("No proxies found or the file is empty. Proceeding without proxies.")
-
 
 def run_browser_instance(thread_id, proxies=None):
     proxy = proxy_queue.get() if not proxy_queue.empty() else None
@@ -84,6 +116,10 @@ def run_browser_instance(thread_id, proxies=None):
                     # Open the website
                     driver.get(url)
 
+                    first_name, last_name = generate_full_name() 
+
+                    email = generate_random_email(first_name, last_name)
+
                     # Wait for the "Ich habe keinen Account/keinen Zugriff" button to be clickable
                     WebDriverWait(driver, 5).until(
                         EC.element_to_be_clickable((By.XPATH, "//p[text()='Ich habe keinen Account/keinen Zugriff']"))
@@ -99,12 +135,12 @@ def run_browser_instance(thread_id, proxies=None):
 
                     # Enter the name field
                     name_input = driver.find_element(By.ID, "input-15")
-                    name_input.send_keys(generate_random_string(8))
+                    name_input.send_keys(f"{first_name} {last_name}")
                     name_input.send_keys(Keys.TAB)
 
                     # Enter the email field
                     email_input = driver.find_element(By.ID, "input-18")
-                    email_input.send_keys(generate_random_email())
+                    email_input.send_keys(email)
                     email_input.send_keys(Keys.TAB)
 
                     # Select the class
@@ -135,8 +171,8 @@ def run_browser_instance(thread_id, proxies=None):
                     duration = end_time - start_time
                     print(f"Thread {thread_id}: Login process completed in {duration:.2f} seconds.")
 
-                    with total_logins.get_lock():
-                        total_logins.value += 1
+                    with login_lock:
+                        total_logins[0] += 1
 
                     break  # Exit retry loop if successful
 
@@ -175,11 +211,11 @@ if __name__ == "__main__":
         thread.start()
         return thread
     
-    total_logins = Value('i', 0)
+    total_logins = [0]
     read_proxies_from_file()  # Load proxies from file
-
     num_threads = get_thread_count()
-    # Create and start 10 browser processes, monitoring for crashes
+
+    # Create and start browser processes, monitoring for crashes
     processes = {}
     for thread_id in range(1, num_threads + 1):  # Use user-defined number of threads
         processes[thread_id] = start_thread(thread_id, proxy_queue)
