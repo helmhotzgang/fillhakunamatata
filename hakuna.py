@@ -63,8 +63,8 @@ def run_browser_instance(thread_id, proxies=None):
         options.add_argument(f"--proxy-server={proxy}".format('http://ip:port'))  # Set the initial proxy
     driver = webdriver.Chrome(service=service, options=options)
 
-    retry_limit = 3  # Number of retry attempts for each error
-    max_proxy_switches = len(proxies) if proxies else 0  # Max number of proxy switches (i.e., number of proxies available)
+    retry_limit = 3  # Number of retry attempts for each error untils it reloads the page to retry
+    proxy_limit = 2 #number of times an full abort can happen on the same proxy
     failures_since_last_proxy = 0  # Counter to track how many consecutive failures occurred
 
 
@@ -139,12 +139,20 @@ def run_browser_instance(thread_id, proxies=None):
                     retry_count += 1
                     print(f"Thread {thread_id}: Error occurred - Retrying {retry_count}/{retry_limit}...")
 
+                    if proxy_index == len(proxies) - 1:
+                        proxy_index = 0 #reset back to first proxy if all don't work
+                        proxy = proxies[proxy_index]
+                        print(f"Thread {thread_id}: Gone through all proxies going back to number 1")
+                        driver.quit()  # Quit the previous driver
+                        options.add_argument(f"--proxy-server={proxy}")  # Set the new proxy
+                        driver = webdriver.Chrome(service=service, options=options)  # Restart with new proxy
+
                     if retry_count == retry_limit:
                         failures_since_last_proxy += 1
                         print(f"Thread {thread_id}: Max retries reached for current proxy.")
 
                         # Switch proxy after max retries if there are more proxies
-                        if failures_since_last_proxy >= retry_limit and proxy_index < len(proxies) - 1:
+                        if failures_since_last_proxy >= proxy_limit and proxy_index < len(proxies) - 1:
                             proxy_index += 1
                             proxy = proxies[proxy_index]  # Switch to next proxy
                             failures_since_last_proxy = 0  # Reset failure counter
