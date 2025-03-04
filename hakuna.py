@@ -54,7 +54,7 @@ def run_browser_instance(thread_id, proxies=None):
 
 
     url = "https://hm.helmholtzschule.de/"  # Website URL
-
+    #url = "https://checkip.amazonaws.com/" #for proxy debugging purposes
     # Start the WebDriver using webdriver-manager
     service = Service(ChromeDriverManager().install())
     options = webdriver.ChromeOptions()
