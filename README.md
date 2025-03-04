@@ -3,6 +3,6 @@ This is purely for educational purposes and should not be used on the real websi
 If you need the website locally you can use a programm like WinHTTrack. (or use the zip file provided)
 
 TO-DO:
-    -Change to packet based logins<br>
-    someone go make this and open a pull request idk if its really worth it, or if it'll be consistent<br>
-    -Add proxy support (maybe even rotating once one gets blocked)
+-    Change to packet based logins
+    someone go make this and open a pull request idk if its really worth it, or if it'll be consistent
+-    Add proxy support (maybe even rotating once one gets blocked)
