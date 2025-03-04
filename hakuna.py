@@ -2,6 +2,7 @@ import time
 import os
 import random
 import string
+import threading
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -11,6 +12,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import WebDriverException, TimeoutException
 from webdriver_manager.chrome import ChromeDriverManager
 from multiprocessing import Process, Value
+from queue import Queue
+#global vars
+proxy_queue = Queue()
 
 
 # Function to generate random data
@@ -37,20 +41,17 @@ def read_proxies_from_file(filename="proxies.txt"):
     """Reads proxy list from the file if it exists and is not empty."""
     if os.path.exists(filename) and os.path.getsize(filename) > 0:
         with open(filename, 'r') as file:
-            proxies = [line.strip() for line in file.readlines() if line.strip()]
-        if proxies:
-            print(f"Loaded {len(proxies)} proxies from file.")
-            return proxies
-    print("No proxies found or the file is empty. Proceeding without proxies.")
-    return None
+            for line in file.readlines():
+                proxy = line.strip()
+                if proxy:
+                    proxy_queue.put(proxy)
+        print(f"Loaded proxies into queue.")
+    else:
+        print("No proxies found or the file is empty. Proceeding without proxies.")
+
 
 def run_browser_instance(thread_id, proxies=None):
-    proxy_index = 0  # Start with the first proxy
-    proxy = None
-
-# If proxies are provided, set one for each login attempt
-    if proxies:
-        proxy = proxies[proxy_index]  # Use the first proxy initially
+    proxy = proxy_queue.get() if not proxy_queue.empty() else None
 
 
     url = "https://hm.helmholtzschule.de/"  # Website URL
@@ -59,6 +60,10 @@ def run_browser_instance(thread_id, proxies=None):
     service = Service(ChromeDriverManager().install())
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")  # Run Chrome in headless mode for faster performance
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-software-rasterizer")
+    options.add_argument("--disable-extensions")
+
     if proxy:
         options.add_argument(f"--proxy-server={proxy}".format('http://ip:port'))  # Set the initial proxy
     driver = webdriver.Chrome(service=service, options=options)
@@ -150,19 +155,7 @@ def run_browser_instance(thread_id, proxies=None):
                     if retry_count == retry_limit:
                         failures_since_last_proxy += 1
                         print(f"Thread {thread_id}: Max retries reached for current proxy.")
-
-                        # Switch proxy after max retries if there are more proxies
-                        if failures_since_last_proxy >= proxy_limit and proxy_index < len(proxies) - 1:
-                            proxy_index += 1
-                            proxy = proxies[proxy_index]  # Switch to next proxy
-                            failures_since_last_proxy = 0  # Reset failure counter
-                            print(f"Thread {thread_id}: Switching to proxy {proxy}.")
-                            driver.quit()  # Quit the previous driver
-                            options.add_argument(f"--proxy-server={proxy}")  # Set the new proxy
-                            driver = webdriver.Chrome(service=service, options=options)  # Restart with new proxy
-                        else:
-                            print(f"Thread {thread_id}: No more proxies available. Skipping iteration.")
-                            break  # Skip this iteration after max retries and proxy changes
+                        break
 
 
     except Exception as e:
@@ -174,37 +167,29 @@ def run_browser_instance(thread_id, proxies=None):
 
 
 if __name__ == "__main__":
-    def start_thread(thread_id, proxies):
+
+    def start_thread(thread_id, proxy_queue):
         """Function to start a thread with a given thread_id."""
         print(f"Thread {thread_id}: Starting...")  # Print when the thread starts
-        process = Process(target=run_browser_instance, args=(thread_id, proxies))
-
-        process.start()
-        return process
+        thread = threading.Thread(target=run_browser_instance, args=(thread_id, proxy_queue))
+        thread.start()
+        return thread
+    
     total_logins = Value('i', 0)
-    proxies = read_proxies_from_file()  # Load proxies from file
+    read_proxies_from_file()  # Load proxies from file
 
     num_threads = get_thread_count()
     # Create and start 10 browser processes, monitoring for crashes
     processes = {}
     for thread_id in range(1, num_threads + 1):  # Use user-defined number of threads
-        processes[thread_id] = start_thread(thread_id, proxies)
+        processes[thread_id] = start_thread(thread_id, proxy_queue)
 
     try:
         while True:
-            # Monitor processes and restart any that have crashed
-            for thread_id, process in processes.items():
-                if not process.is_alive():  # Check if the process is no longer running
-                    print(f"Thread {thread_id} crashed. Restarting...")
-                    processes[thread_id] = start_thread(thread_id, proxies)
-
             time.sleep(1)  # Check every second
 
     except KeyboardInterrupt:
         print("Script stopped by user.")
     finally:
-        for process in processes.values():
-            process.terminate()
-            process.join()
         print("All browser instances closed.")
         print(f"Total Logins completed: {total_logins.value}")

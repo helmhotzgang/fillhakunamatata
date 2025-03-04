@@ -6,4 +6,4 @@ Proxies: If you're on version 0.7 and up you have the option to use proxies, the
 TO-DO:
 -    Change to packet based logins. 
     someone go make this and open a pull request idk if its really worth it, or if it'll be consistent
--    Add proxy support (maybe even rotating once one gets blocked)(just looked through the process of adding paid proxies, and that might take a while as its a pain in the ass to auth)
+- [x]   Add proxy support (maybe even rotating once one gets blocked)(just looked through the process of adding paid proxies, and that might take a while as its a pain in the ass to auth)
