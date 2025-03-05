@@ -225,7 +225,7 @@ if __name__ == "__main__":
     def start_thread(thread_id, proxy_queue):
         """Function to start a thread with a given thread_id."""
         print(f"Thread {thread_id}: Starting...")  # Print when the thread starts
-        thread = threading.Thread(target=run_browser_instance, args=(thread_id, proxy_queue))
+        thread = threading.Thread(target=run_browser_instance, args=(thread_id, proxy_queue), daemon=True)
         thread.start()
         return thread
     
@@ -233,13 +233,20 @@ if __name__ == "__main__":
     read_proxies_from_file()  # Load proxies from file
     num_threads = get_thread_count()
 
-    # Create and start browser processes, monitoring for crashes
-    processes = {}
+    # Create and start browser threads, monitoring for crashes
+    threads = {}
     for thread_id in range(1, num_threads + 1):  # Use user-defined number of threads
-        processes[thread_id] = start_thread(thread_id, proxy_queue)
+        threads[thread_id] = start_thread(thread_id, proxy_queue)
 
     try:
         while True:
+            # Monitor threads and restart any that have crashed
+            for thread_id, thread in threads.items():
+                if not thread.is_alive():  # Check if the process is no longer running
+                    print(f"Thread {thread_id} crashed. Restarting in 5 seconds...")
+                    time.sleep(5)
+                    threads[thread_id] = start_thread(thread_id, proxy_queue)
+
             time.sleep(1)  # Check every second
 
     except KeyboardInterrupt:
