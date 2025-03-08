@@ -7,3 +7,6 @@ TO-DO:
 -    Change to packet based logins. 
     someone go make this and open a pull request idk if its really worth it, or if it'll be consistent
 - [x]   Add proxy support (maybe even rotating once one gets blocked)(just looked through the process of adding paid proxies, and that might take a while as its a pain in the ass to auth)
+
+
+Since I genuinly don't rlly know what else to add since the website is down for another while, if you want something that isnt added currently just open an issue feature request and tell me. If I have some free time I'll probably add it
