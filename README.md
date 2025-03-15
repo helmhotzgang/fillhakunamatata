@@ -10,3 +10,40 @@ TO-DO:
 
 
 Since I genuinly don't rlly know what else to add since the website is down for another while, if you want something that isnt added currently just open an issue feature request and tell me. If I have some free time I'll probably add it
+
+
+### Setup
+
+1. Install [Python3](https://www.python.org/) via one of their [Download](https://www.python.org/downloads/).
+
+2. Clone the repository into a directory of your choice.
+
+```bash
+git clone https://github.com/helmhotzgang/fillhakunamatata.git
+```
+
+3. Enter the new directory and install packages.
+
+```bash
+cd fillhakunamatata
+pip install -r requirements.txt
+```
+
+4. If you want to use proxies for the project create a proxies.txt file in the directory and put one proxy per line in the format 
+
+```bash
+http://ip:port
+```
+
+5. Then just start the script
+
+```bash
+cd fillhakunamatata
+pip install -r requirements.txt
+```
+
+6. If you have proxies it will automatically pick them up, it will ask you for the amount of threads you want to run (same number as browser instances), it is not recommended to have this set above 25.
+
+ ### More info on Proxies
+
+  If you have added 1 or multiple proxies is will never use your own IP-Adress, if you have multiple proxies it will dynamically switch when they start failing and with 1 it will just use that.
