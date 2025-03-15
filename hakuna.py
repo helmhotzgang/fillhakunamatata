@@ -104,12 +104,12 @@ def run_browser_instance(thread_id, proxies=None):
     proxy = proxy_queue.get() if not proxy_queue.empty() else None
 
 
-    #url = "https://hm.helmholtzschule.de/"  # Website URL
-    url = "https://checkip.amazonaws.com/" #for proxy debugging purposes
+    url = "https://hm.helmholtzschule.de/"  # Website URL
+    #url = "https://checkip.amazonaws.com/" #for proxy debugging purposes
     # Start the WebDriver using webdriver-manager
     service = Service(ChromeDriverManager().install())
     options = webdriver.ChromeOptions()
-    #options.add_argument("--headless")  # Run Chrome in headless mode for faster performance
+    options.add_argument("--headless")  # Run Chrome in headless mode for faster performance
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-software-rasterizer")
     options.add_argument("--disable-extensions")
