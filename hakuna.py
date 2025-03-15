@@ -237,7 +237,7 @@ if __name__ == "__main__":
     threads = {}
     for thread_id in range(1, num_threads + 1):  # Use user-defined number of threads
         threads[thread_id] = start_thread(thread_id, proxy_queue)
-        time.sleep(0.3) #just some wait time to make sure you dont have threads trying to longin to the same course
+        time.sleep(0.3) #just some wait time to make sure you dont have threads trying to longin to the same course (make this smaller if you start like 100)
 
     try:
         while True:
