@@ -104,12 +104,12 @@ def run_browser_instance(thread_id, proxies=None):
     proxy = proxy_queue.get() if not proxy_queue.empty() else None
 
 
-    url = "https://hm.helmholtzschule.de/"  # Website URL
-    #url = "https://checkip.amazonaws.com/" #for proxy debugging purposes
+    #url = "https://hm.helmholtzschule.de/"  # Website URL
+    url = "https://checkip.amazonaws.com/" #for proxy debugging purposes
     # Start the WebDriver using webdriver-manager
     service = Service(ChromeDriverManager().install())
     options = webdriver.ChromeOptions()
-    options.add_argument("--headless")  # Run Chrome in headless mode for faster performance
+    #options.add_argument("--headless")  # Run Chrome in headless mode for faster performance
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-software-rasterizer")
     options.add_argument("--disable-extensions")
@@ -119,8 +119,6 @@ def run_browser_instance(thread_id, proxies=None):
     driver = webdriver.Chrome(service=service, options=options)
 
     retry_limit = 3  # Number of retry attempts for each error untils it reloads the page to retry
-    proxy_limit = 2 #number of times an full abort can happen on the same proxy
-    failures_since_last_proxy = 0  # Counter to track how many consecutive failures occurred
 
 
     try:
@@ -198,17 +196,21 @@ def run_browser_instance(thread_id, proxies=None):
                     retry_count += 1
                     print(f"Thread {thread_id}: Error occurred - Retrying {retry_count}/{retry_limit}...")
 
-                    if proxy_index == len(proxies) - 1:
-                        proxy_index = 0 #reset back to first proxy if all don't work
-                        proxy = proxies[proxy_index]
-                        print(f"Thread {thread_id}: Gone through all proxies going back to number 1")
-                        driver.quit()  # Quit the previous driver
+                    if retry_count == retry_limit:
+                        print(f"Thread {thread_id}: Max retries reached for current proxy.")
+                                                # Check if the proxy queue is empty, and reset if necessary
+                        if proxy_queue.empty():
+                            print(f"Thread {thread_id}: All proxies exhausted. Resetting to first proxy.")
+                            proxy_queue.queue.clear()  # Clear any leftover proxies (optional)
+                            read_proxies_from_file()  # Refill proxies if exhausted
+                        # Grab the next proxy
+                        proxy = proxy_queue.get() if not proxy_queue.empty() else None
+                        
+                        # Restart browser instance with new proxy
+                        print(f"Thread {thread_id}: Switching to new proxy: {proxy}")
+                        driver.quit()  # Close the current driver
                         options.add_argument(f"--proxy-server={proxy}")  # Set the new proxy
                         driver = webdriver.Chrome(service=service, options=options)  # Restart with new proxy
-
-                    if retry_count == retry_limit:
-                        failures_since_last_proxy += 1
-                        print(f"Thread {thread_id}: Max retries reached for current proxy.")
                         break
 
 
