@@ -40,6 +40,7 @@ http://ip:port
 ```bash
 cd fillhakunamatata
 pip install -r requirements.txt
+hakuna.py
 ```
 
 6. If you have proxies it will automatically pick them up, it will ask you for the amount of threads you want to run (same number as browser instances), it is not recommended to have this set above 25.
