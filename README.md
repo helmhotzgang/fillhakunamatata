@@ -1,7 +1,7 @@
-Open the file, it uses the selenium library. It spams login with random stuff and reloads the browser to reload the page.
-This is purely for educational purposes and should not be used on the real website, even though the code suggests it it is meant for purely local application.
-If you need the website locally you can use a programm like WinHTTrack. (or use the zip file provided)
-Proxies: If you're on version 0.7 and up you have the option to use proxies, these must be in a file called proxies.txt in the same directory as the file. The script doesn't support authing via a username and password so please enable ip authentification at your provider. The proxies should be in the format http://ip:port 1 per line.
+## Short Explanation
+The file uses the Selenium Library to open the page and login, when you start it it will ask for how many threads aka. browser instances to open. Please keep in mind there's a 0.3s delay between opening them in the code, which can be changed by just looking for a bit. Opening too many instances WILL crash your PC. Have fun!
+#### Funny Business
+I got some inside info that nobody that the person that would be responsible for changing the website and fix this vulnerability is not going to do that in the near future (even though they got hints from us) so we can have fun. The Project is most likely going to start at the same time that it usually would again so be ready, we as a community decided to give people between 5 and 15 Minutes after it started before we start bombarding it. Please be civil.
 
 TO-DO:
 -    Change to packet based logins. 
@@ -12,9 +12,9 @@ TO-DO:
 Since I genuinly don't rlly know what else to add since the website is down for another while, if you want something that isnt added currently just open an issue feature request and tell me. If I have some free time I'll probably add it
 
 
-### Setup
+## Setup
 
-1. Install [Python3](https://www.python.org/) via one of their [Download](https://www.python.org/downloads/).
+1. Install [Python3](https://www.python.org/) via their [Download](https://www.python.org/downloads/).
 
 2. Clone the repository into a directory of your choice.
 
@@ -43,6 +43,10 @@ hakuna.py
 
 6. If you have proxies it will automatically pick them up, it will ask you for the amount of threads you want to run (same number as browser instances), it is not recommended to have this set above 25.
 
- ### More info on Proxies
+ ## More info on Proxies
 
   If you have added 1 or multiple proxies is will never use your own IP-Adress, if you have multiple proxies it will dynamically switch when they start failing and with 1 it will just use that.
+
+ ### Info on Paid Proxies
+
+ If you try using better paid private proxies that require authentication using a password and and username that won't work with the script since chrome webdriver doesn't support also giving username and password as an option but just literally port and ip. If you still need to (which I really recommend since free proxies are terrible) then try out [Webshare](https://www.webshare.io/). They don't have the cheapest proxies but you can definitely get some good datacenter ones, then just change the authentication method from Username/Password to Ip Authentication and add your own IP.
