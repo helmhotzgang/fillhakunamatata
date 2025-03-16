@@ -38,8 +38,6 @@ http://ip:port
 5. Then just start the script
 
 ```bash
-cd fillhakunamatata
-pip install -r requirements.txt
 hakuna.py
 ```
 
