@@ -50,3 +50,7 @@ hakuna.py
  ### Info on Paid Proxies
 
  If you try using better paid private proxies that require authentication using a password and and username that won't work with the script since chrome webdriver doesn't support also giving username and password as an option but just literally port and ip. If you still need to (which I really recommend since free proxies are terrible) then try out [Webshare](https://www.webshare.io/). They don't have the cheapest proxies but you can definitely get some good datacenter ones, then just change the authentication method from Username/Password to Ip Authentication and add your own IP.
+
+ # Info on Packet Based Code
+
+ The file called packet_hakuna.py does basically the same stuff the first file does just much faster much more efficient and much more stupid. If you know what youre doing you can also find 1 course figure out its course id and just keep filling that one otherwise the code should do it all for you. Also different to the hakuna.py it doesnt get its names from the name list (which worked fine for me) since on some PC's I tried it on that just refused to work, instead it uses the Faker library to generate german names.

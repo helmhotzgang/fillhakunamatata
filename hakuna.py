@@ -126,6 +126,8 @@ def run_browser_instance(thread_id, proxies=None):
             retry_count = 0  # Reset retry counter for each iteration
             while retry_count < retry_limit:
                 try:
+                    #var for random class
+                    class_amount = random.randint(0, 19)
                     # Timer starts
                     start_time = time.time()
 
@@ -161,7 +163,15 @@ def run_browser_instance(thread_id, proxies=None):
 
                     # Select the class
                     class_input = driver.find_element(By.XPATH, "//div[@role='button' and @aria-expanded='false']")
-                    class_input.click()
+
+                    class_input.send_keys(Keys.ENTER)
+                    class_input.send_keys(Keys.ARROW_DOWN)
+                    while class_amout:
+                        class_input.send_keys(Keys.ARROW_DOWN)
+                        time.sleep(0.01)
+                        class_amount = class_amount - 1
+                    class_input.send_keys(Keys.ENTER)
+                    # this might not work so go back to just class_input.click() but if it does its also randomizing the class so they cant just kick out 1 class and be good
 
                     # Click the first class option
                     first_class_option = WebDriverWait(driver, 1).until(
@@ -239,15 +249,15 @@ if __name__ == "__main__":
     threads = {}
     for thread_id in range(1, num_threads + 1):  # Use user-defined number of threads
         threads[thread_id] = start_thread(thread_id, proxy_queue)
-        time.sleep(0.3) #just some wait time to make sure you dont have threads trying to longin to the same course (make this smaller if you start like 100)
+        time.sleep(0.3) #just some wait time to make sure you dont have threads trying to longin to the same course (make this smaller if you start like 100)[remove this line if you want fun and see all courses at like 10/3 total logins]
 
     try:
         while True:
             # Monitor threads and restart any that have crashed
             for thread_id, thread in threads.items():
                 if not thread.is_alive():  # Check if the process is no longer running
-                    print(f"Thread {thread_id} crashed. Restarting in 5 seconds...")
-                    time.sleep(5)
+                    print(f"Thread {thread_id} crashed. Restarting in 3 seconds...")
+                    time.sleep(3)
                     threads[thread_id] = start_thread(thread_id, proxy_queue)
 
             time.sleep(1)  # Check every second
