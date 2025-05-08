@@ -78,7 +78,7 @@ def register_user(course_id):
 
         try:
             response = requests.post(
-                "https://hm.helmholtzschule.de/js/user-registration.js",
+                "https://hm.helmholtzschule.de/script/register-user.php",
                 headers=headers,
                 data=json.dumps(payload),
                 proxies=proxies,
@@ -90,7 +90,6 @@ def register_user(course_id):
         except Exception as e:
             print(f"Thread {thread_name}: Error with proxy {proxy}: {e}")
         finally:
-            time.sleep(0.1)  # Small sleep to prevent hammering
             continue  # Keep going until Ctrl+C
 
 if __name__ == "__main__":

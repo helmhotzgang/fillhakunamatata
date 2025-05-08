@@ -54,3 +54,5 @@ hakuna.py
  # Info on Packet Based Code
 
  The file called packet_hakuna.py does basically the same stuff the first file does just much faster much more efficient and much more stupid. If you know what youre doing you can also find 1 course figure out its course id and just keep filling that one otherwise the code should do it all for you. Also different to the hakuna.py it doesnt get its names from the name list (which worked fine for me) since on some PC's I tried it on that just refused to work, instead it uses the Faker library to generate german names.
+ -After like 1 minute of trying and using my brain, its also way less strenuous on your hardware 1000 threads can easily run but at that point you might limit the website while 100 is perfectly fine.
+ Please keep in mind this script is not done and doesnt do a pull for open courses yet which isnt possible since the webpage is down. I was able to code this part of the local download I had of the page.
