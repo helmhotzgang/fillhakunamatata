@@ -6,6 +6,7 @@ import os
 import time
 from faker import Faker
 from queue import Queue
+from collections import defaultdict
 
 # Global vars
 proxy_queue = Queue()
@@ -13,6 +14,8 @@ total_logins = [0]
 login_lock = threading.Lock()
 run_event = threading.Event()
 run_event.set()  # This enables the threads to keep running
+max_attempts = 100
+attempts_per_course = defaultdict(int)
 
 fake = Faker("de_DE")
 
@@ -76,6 +79,14 @@ def get_thread_count():
         except ValueError:
             print("Invalid input. Please enter an integer.")
 
+def check_all_courses_blacklisted():
+    """Check if all courses have been blacklisted (max_attempts reached)."""
+    with course_lock:
+        for course_id in course_ids:
+            if attempts_per_course[course_id] < max_attempts:
+                return False  # If any course hasn't reached max attempts, return False
+    return True  # All courses have been blacklisted
+
 def register_user():
     thread_name = threading.current_thread().name.replace("Thread-", "")
     
@@ -89,6 +100,11 @@ def register_user():
                 time.sleep(2)
                 continue
             course_id = random.choice(course_ids)
+
+            # Check if the course has reached the max attempts, skip it if so
+            if attempts_per_course[course_id] >= max_attempts:
+                print(f"Thread {thread_name}: Skipping course {course_id} as it has reached the max attempts.")
+                continue  # Skip this course and pick another course in the next loop
 
         name, email = generate_name_and_email()
         random_class = random.choice(classes)
@@ -112,6 +128,9 @@ def register_user():
                 proxies=proxies,
                 timeout=15
             )
+
+            attempts_per_course[course_id] += 1
+
             with login_lock:
                 total_logins[0] += 1
             print(f"Thread {thread_name}: Status {response.status_code} | Course: {course_id} | Proxy: {proxy if proxy else 'None'} | Class: {random_class}")
