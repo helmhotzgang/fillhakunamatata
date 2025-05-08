@@ -117,7 +117,8 @@ def register_user():
             "class": random_class
         }
         headers = {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0"
         }
 
         try:
