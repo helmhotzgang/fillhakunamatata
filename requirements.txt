@@ -1,2 +1,11 @@
 selenium
 webdriver-manager
+collections
+faker
+threading
+requests
+json
+random
+os
+time
+queue
