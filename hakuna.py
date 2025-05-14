@@ -166,7 +166,7 @@ def run_browser_instance(thread_id, proxies=None):
 
                     class_input.send_keys(Keys.ENTER)
                     class_input.send_keys(Keys.ARROW_DOWN)
-                    while class_amout:
+                    while class_amount:
                         class_input.send_keys(Keys.ARROW_DOWN)
                         time.sleep(0.01)
                         class_amount = class_amount - 1
