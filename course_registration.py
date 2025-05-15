@@ -25,6 +25,17 @@ valid_rooms = [
     "K301", "K302", "K303", "K304", "K305", "K306", "K308", "K309"
 ]
 
+def load_names_from_file(filename):
+    if not os.path.exists(filename):
+        print(f"File '{filename}' not found. Using empty list.")
+        return []
+    with open(filename, encoding="utf-8") as f:
+        print(f"Sucessfully loaded {filename} from file")
+        return [line.strip() for line in f if line.strip()]
+
+student_names = load_names_from_file("students.txt")
+teachers = load_names_from_file("teachers.txt")
+
 def read_proxies(filename="proxies.txt"):
     global proxy_list
     if os.path.exists(filename):
@@ -35,7 +46,7 @@ def read_proxies(filename="proxies.txt"):
         print("No proxy file found. Running without proxies.")
 
 def generate_leader():
-    name = fake.name()
+    name = random.choice(student_names)
     email = f"{name.split()[-1].lower()}{name[0].lower()}@helmholtzschule.de"
     class_ = random.choice(classes)
     return {"name": name, "email": email, "class": class_}
@@ -46,11 +57,11 @@ def generate_course():
         "leaders": leaders,
         "course_name": fake.catch_phrase(),
         "participants": random.randint(5, 50),
-        "description": fake.text(max_nb_chars=150),
+        "description": "The best description ever",  #fake.text(max_nb_chars=150),    change this if you want but for speed im just hardcoding it
         "goal": fake.sentence(),
-        "cost": round(random.uniform(0, 15), 2),
+        "cost": 0,
         "room_wish": random.choice(valid_rooms),  # Select a random room from the valid list
-        "teacher_wish": random.choice([fake.name(), ""])
+        "teacher_wish": random.choice(teachers)
     }
 
 def register_course():

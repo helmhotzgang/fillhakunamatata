@@ -1,6 +1,8 @@
 proxies.txt
+# buy your own ones
 exe packet with gui.spec
 packet_hakuna.spec
 /dist/
 /build/
-# buy your own ones
+teachers.txt
+students.txt
