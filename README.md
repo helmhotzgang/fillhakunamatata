@@ -1,3 +1,6 @@
+# Disclaimer
+This Repository has possibly been found by administrators, so will not be fully up to date from now on.
+
 ## Short Explanation
 The file uses the Selenium Library to open the page and login, when you start it it will ask for how many threads aka. browser instances to open. Please keep in mind there's a 0.3s delay between opening them in the code, which can be changed by just looking for a bit. Opening too many instances WILL crash your PC. Have fun!
 Nowadays use packe_hakuna.py its much better
