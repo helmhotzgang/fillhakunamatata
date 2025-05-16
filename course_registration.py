@@ -5,6 +5,7 @@ import random
 import os
 import time
 from faker import Faker
+from collections import defaultdict
 
 # Config
 max_courses = 100
@@ -14,6 +15,9 @@ proxy_list = []
 created_courses = [0]
 run_event = threading.Event()
 run_event.set()
+proxy_failures = defaultdict(int)
+proxy_lock = threading.Lock()  # To safely modify the proxy list and counts across threads
+MAX_PROXY_FAILURES = 3
 
 # Preset list of valid rooms
 valid_rooms = [
@@ -45,6 +49,22 @@ def read_proxies(filename="proxies.txt"):
     else:
         print("No proxy file found. Running without proxies.")
 
+def get_random_proxy():
+    with proxy_lock:
+        return random.choice(proxy_list) if proxy_list else None
+    if USE_PROXIES and not proxy_list:
+         print("No proxies left. Switching to direct connections.")
+    return None
+def mark_proxy_failure(proxy):
+    if not proxy:
+        return7
+    with proxy_lock:
+        proxy_failures[proxy] += 1
+        if proxy_failures[proxy] >= MAX_PROXY_FAILURES:
+            print(f"Removing bad proxy: {proxy}")
+            proxy_list.remove(proxy)
+            del proxy_failures[proxy]
+
 def generate_leader():
     name = random.choice(student_names)
     email = f"{name.split()[-1].lower()}{name[0].lower()}@helmholtzschule.de"
@@ -68,7 +88,7 @@ def register_course():
     thread_name = threading.current_thread().name
     while run_event.is_set() and created_courses[0] < max_courses:
         course_data = generate_course()
-        proxy = random.choice(proxy_list) if proxy_list else None
+        proxy = get_random_proxy()
         proxies = {"http": proxy, "https": proxy} if proxy else None
 
         try:
@@ -88,7 +108,7 @@ def register_course():
                 print(f"{thread_name}: Failed ({response.status_code})")
         except Exception as e:
             print(f"{thread_name}: Error with proxy {proxy}: {e}")
-        time.sleep(random.uniform(0.1, 0.5))
+            mark_proxy_failure(proxy)
 
 def main():
     read_proxies()
